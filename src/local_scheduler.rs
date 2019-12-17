@@ -119,11 +119,9 @@ impl LocalScheduler {
         );
 
         while num_finished != jt.num_output_parts {
-            let event_option = self.wait_for_event(jt.run_id, self.poll_timeout);
-            let start = Instant::now();
-
-            if let Some(mut evt) = event_option {
+            if let Some(mut evt) = self.wait_for_event(jt.run_id, self.poll_timeout) {
                 info!("event starting");
+                let start = Instant::now();
                 let stage = self.stage_cache.lock()[&evt.task.get_stage_id()].clone();
                 info!(
                     "removing stage task from pending tasks {} {}",
@@ -148,6 +146,8 @@ impl LocalScheduler {
                         //TODO error handling
                     }
                 }
+            } else {
+                return Err(Error::TimeOut);
             }
 
             if !jt.failed.borrow().is_empty()

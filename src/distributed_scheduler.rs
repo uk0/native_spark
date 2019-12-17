@@ -68,7 +68,7 @@ impl DistributedScheduler {
             max_failures,
             attempt_id: Arc::new(AtomicUsize::new(0)),
             resubmit_timeout: 2000,
-            poll_timeout: 500,
+            poll_timeout: 2000,
             event_queues: Arc::new(Mutex::new(HashMap::new())),
             next_job_id: Arc::new(AtomicUsize::new(0)),
             next_run_id: Arc::new(AtomicUsize::new(0)),
@@ -163,11 +163,9 @@ impl DistributedScheduler {
         );
 
         while num_finished != jt.num_output_parts {
-            let event_option = self.wait_for_event(jt.run_id, self.poll_timeout);
-            let start_time = Instant::now();
-
-            if let Some(mut evt) = event_option {
+            if let Some(mut evt) = self.wait_for_event(jt.run_id, self.poll_timeout) {
                 info!("event starting");
+                let start_time = Instant::now();
                 let stage = self.stage_cache.lock()[&evt.task.get_stage_id()].clone();
                 info!(
                     "removing stage task from pending tasks {} {}",
@@ -192,6 +190,8 @@ impl DistributedScheduler {
                         //TODO error handling
                     }
                 }
+            } else {
+                return Err(Error::TimeOut);
             }
 
             if !jt.failed.borrow().is_empty()
