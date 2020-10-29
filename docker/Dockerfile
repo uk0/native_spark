@@ -19,6 +19,8 @@ RUN set -e; \
     apt-get install -yq --no-install-recommends $tempPkgs; 
 # Install and set up rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain $RUST_VERSION --no-modify-path; 
+# fix build bug
+RUN rustup override set nightly-2020-09-14
 WORKDIR /home
 COPY . vega
 RUN set -e; cd vega; \
